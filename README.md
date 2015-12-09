@@ -60,5 +60,9 @@ You can access a number of the defaults when creating the plugin instance. Here 
         onStringTyped: function() {}      // callback for every typed string
     });
 
+## Support
+
+I'm not 100% always watching my projects so please be patient if you submit any questions/comments.  By all means I am always open to fixing any issues as well as answering some questions so feel free to blast away!
+
 ## Contributors
 http://ronaldpearl.com
