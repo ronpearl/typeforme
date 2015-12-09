@@ -1,5 +1,5 @@
 ## Synopsis
-JQuery Plugin that allows does auto-typing of text onto the page - sampled from Typed.js
+JQuery Plugin that auto-types text onto the page - sampled from Typed.js
 
 ## Motivation
 This was a quick spin-off of https://github.com/mattboldt/typed.js/.   The author did a great job with it but there were some minor functionalities that were missing.  I decided to take some of his ([mattboldt](https://github.com/mattboldt)) wonderful work and port it into something a little more fluid that allows for more customizability. 
