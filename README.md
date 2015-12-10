@@ -26,6 +26,10 @@ Here are the available predefined functions:
     'startCursorBlink'      // Re-starts the cursor blink
     'stopCursorBlink'       // Stops the cursor blink
 
+## Demo Page
+
+http://ronaldpearl.com/typeforme.php
+
 ## Installation
 Add the typeforme.js file and a reference to JQuery. Then you can instantiate the plugin like so:
 
