@@ -36,218 +36,238 @@
     }
 
 
-        Plugin.prototype = {
+    Plugin.prototype = {
 
-            init: function() {
+        init: function() {
+            var theElement = this.$el;
+            var thisSelf = this;
+            if (theElement.text() != "") theElement.html("");
+
+            // Check cursor settings, build if needed
+            if (this.options.cursor.showCursor) {
+                theElement.after('<span class="' + this.options.cursor.className + '">' + this.options.cursor.character + '</span>');
+                this.startCursorBlink();
+            }
+
+            // See if user is using a stringsElement from the screen
+            // If so, replace the default with the div items
+            var whatToTypeArray = this.options.whatToType;
+
+            if (this.options.stringsElement.element) {
+                var enteredStringsElem = $(this.options.stringsElement.element);
+                whatToTypeArray = [];
+                whatToTypeArray = enteredStringsElem.text().split( this.options.stringsElement.delimiter );
+            }
+
+            // Shuffle strings array if needed
+            this.options.whatToType = this.options.shuffle ? shuffleArray(whatToTypeArray) : whatToTypeArray;
+            whatToTypeArray = this.options.whatToType;
+
+            this.beginTypeProcess(whatToTypeArray);
+        },
+
+        beginTypeProcess: function(whatToTypeArray) {
+            var thisSelf = this;
+            var whatToTypeArrayUsed;
+
+            if (whatToTypeArray) {
+                whatToTypeArrayUsed = whatToTypeArray;
+            } else {
+                whatToTypeArrayUsed = this.options.whatToType;
+                this.stopTyping();
+            }
+
+            // Start delay based on user input
+            setTimeout( function() {
+                // Do first typing
+                thisSelf.startTyping(whatToTypeArrayUsed[0], 0);
+            }, this.options.startDelay);
+        },
+
+        startTyping: function(currentString, currentPosition) {
+            var theElement = this.$el;
+            var thisSelf = this;
+
+            // Set variables for recording where we are currently
+            this.currentStringBeingTyped = currentString;
+            this.currentPositionOfTyping = currentPosition;
+
+            // Humanize typing delay
+            typeDelay = Math.round(Math.random() * (100 - 30) + thisSelf.options.typeSpeed);
+
+            // Make sure the typingAction timeout wasn't cleared yet
+            // otherwise do typing
+            this.typingAction = setTimeout(function () {
+                thisSelf.continueTyping();
+            }, typeDelay);
+        },
+
+        continueTyping: function() {
+            if (this.typingAction == undefined || this.typingAction != false) {
                 var theElement = this.$el;
                 var thisSelf = this;
-                if (theElement.text() != "") theElement.html("");
+                var currentString = this.currentStringBeingTyped;
+                var currentPosition = this.currentPositionOfTyping;
 
-                // Check cursor settings, build if needed
-                if (this.options.cursor.showCursor) {
-                    theElement.after('<span class="' + this.options.cursor.className + '">' + this.options.cursor.character + '</span>');
-                    this.startCursorBlink();
-                }
-
-                // See if user is using a stringsElement from the screen
-                // If so, replace the default with the div items
-                var whatToTypeArray = this.options.whatToType;
-
-                if (this.options.stringsElement.element) {
-                    var enteredStringsElem = $(this.options.stringsElement.element);
-                    whatToTypeArray = [];
-                    whatToTypeArray = enteredStringsElem.text().split( this.options.stringsElement.delimiter );
-                }
-
-                // Shuffle strings array if needed
-                this.options.whatToType = this.options.shuffle ? shuffleArray(whatToTypeArray) : whatToTypeArray;
-                whatToTypeArray = this.options.whatToType;
-
-                this.beginTypeProcess(whatToTypeArray);
-            },
-
-            beginTypeProcess: function(whatToTypeArray) {
-                var thisSelf = this;
-                var whatToTypeArrayUsed;
-
-                if (whatToTypeArray) {
-                    whatToTypeArrayUsed = whatToTypeArray;
-                } else {
-                    whatToTypeArrayUsed = this.options.whatToType;
-                    this.stopTyping();
-                }
-
-                // Start delay based on user input
-                setTimeout( function() {
-                    // Do first typing
-                    thisSelf.startTyping(whatToTypeArrayUsed[0], 0);
-                }, this.options.startDelay);
-            },
-
-            startTyping: function(currentString, currentPosition) {
-                var theElement = this.$el;
-                var thisSelf = this;
-
-                // Set variables for recording where we are currently
-                this.currentStringBeingTyped = currentString;
-                this.currentPositionOfTyping = currentPosition;
-
-                // Humanize typing delay
-                typeDelay = Math.round(Math.random() * (100 - 30) + thisSelf.options.typeSpeed);
-
-                // Make sure the typingAction timeout wasn't cleared yet
-                // otherwise do typing
-                this.typingAction = setTimeout(function () {
-                    thisSelf.continueTyping();
-                }, typeDelay);
-            },
-
-            continueTyping: function() {
-                if (this.typingAction == undefined || this.typingAction != false) {
-                    var theElement = this.$el;
-                    var thisSelf = this;
-                    var currentString = this.currentStringBeingTyped;
-                    var currentPosition = this.currentPositionOfTyping;
-
-                    if (currentPosition === currentString.length) {
-                        // fires callback function
-                        thisSelf.options.onStringTyped(thisSelf.arrayPos);
-
-                        // is this the final string
-                        if (thisSelf.arrayPos === thisSelf.options.whatToType.length - 1) {
-                            // animation that occurs on the last typed string
-                            thisSelf.options.callback();
-
-                            thisSelf.currentLoop++;
-
-                            // quit if we wont loop back
-                            if (thisSelf.options.loop === false || thisSelf.currentLoop === thisSelf.options.loopCount)
-                                return;
-                        }
-
-                        thisSelf.timeout = setTimeout(function () {
-                            thisSelf._backspacing(currentString, currentPosition);
-                        }, thisSelf.backDelay);
-                    } else {
-                        // If this is the first item of the string typed,
-                        // do preStringTyped function if declared by user
-                        if (currentPosition == 0) thisSelf.options.preStringTyped();
-
-                        // Start the string adding
-                        var nextString = currentString.substr(0, currentPosition + 1);
-                        if (thisSelf.options.attr) {
-                            theElement.attr(thisSelf.options.attr, nextString);
+                // Skip over html characters
+                if (self.contentType === 'html') {
+                    var curChar = currentString.substr(currentPosition).charAt(0)
+                    if (curChar === '<' || curChar === '&') {
+                        var tag = '';
+                        var endTag = '';
+                        if (curChar === '<') {
+                            endTag = '>'
                         } else {
-                            if (thisSelf.isInput) {
-                                theElement.val(nextString);
-                            } else if (thisSelf.contentType === 'html') {
-                                theElement.html(nextString);
-                            } else {
-                                theElement.text(nextString);
-                            }
+                            endTag = ';'
                         }
-
-                        // add characters one by one
+                        while (currentString.substr(currentPosition).charAt(0) !== endTag) {
+                            tag += currentString.substr(currentPosition).charAt(0);
+                            currentPosition++;
+                        }
                         currentPosition++;
-                        // Loop it
-                        this.startTyping(currentString, currentPosition);
-                    }
-                } else {
-                    this.beginTypeProcess(this.options.whatToType);
-                }
-            },
-
-            stopTyping: function() {
-                var theElement = this.$el;
-                var thisSelf = this;
-
-                clearTimeout(this.typingAction);
-                clearTimeout(this.backspaceAction);
-                this.typingAction = false;
-                this.backspaceAction = false;
-
-                if (thisSelf.options.attr) {
-                    theElement.attr(thisSelf.options.attr, '');
-                } else {
-                    if (thisSelf.isInput) {
-                        theElement.val('');
-                    } else if (self.contentType === 'html') {
-                        theElement.html('');
-                    } else {
-                        theElement.text('');
+                        tag += endTag;
                     }
                 }
-            },
 
-            _backspacing: function(currentString, currentPosition) {
-                var theElement = this.$el;
-                var thisSelf = this;
+                if (currentPosition === currentString.length) {
+                    // fires callback function
+                    thisSelf.options.onStringTyped(thisSelf.arrayPos);
 
-                // Humanize typing delay
-                typeDelay = Math.round(Math.random() * (100 - 30) + thisSelf.options.typeSpeed);
+                    // is this the final string
+                    if (thisSelf.arrayPos === thisSelf.options.whatToType.length - 1) {
+                        // animation that occurs on the last typed string
+                        thisSelf.options.callback();
 
-                this.backspaceAction = setTimeout( function() {
-                    var nextString = currentString.substr(0, currentPosition);
+                        thisSelf.currentLoop++;
+
+                        // quit if we wont loop back
+                        if (thisSelf.options.loop === false || thisSelf.currentLoop === thisSelf.options.loopCount)
+                            return;
+                    }
+
+                    thisSelf.timeout = setTimeout(function () {
+                        thisSelf._backspacing(currentString, currentPosition);
+                    }, thisSelf.backDelay);
+                } else {
+                    // If this is the first item of the string typed,
+                    // do preStringTyped function if declared by user
+                    if (currentPosition == 0) thisSelf.options.preStringTyped();
+
+                    // Start the string adding
+                    var nextString = currentString.substr(0, currentPosition + 1);
                     if (thisSelf.options.attr) {
                         theElement.attr(thisSelf.options.attr, nextString);
                     } else {
                         if (thisSelf.isInput) {
                             theElement.val(nextString);
-                        } else if (thisSelf.contentType === 'html') {
+                        } else if (thisSelf.options.contentType === 'html') {
                             theElement.html(nextString);
                         } else {
                             theElement.text(nextString);
                         }
                     }
 
-                    // if the number (id of character in current string) is
-                    // less than 0, keep going
-                    if (currentPosition > 0) {
-                        // subtract characters one by one
-                        currentPosition--;
-                        // loop the function
-                        thisSelf._backspacing(currentString, currentPosition);
-                    }
-                    // if the stop number has been reached, increase
-                    // array position to next string
-                    else if (currentPosition <= 0) {
-                        thisSelf.arrayPos++;
-
-                        if (thisSelf.arrayPos === thisSelf.options.whatToType.length) {
-                            thisSelf.arrayPos = 0;
-
-                            // Shuffle strings array if needed
-                            //thisSelf.options.whatToType = thisSelf.options.shuffle ? shuffleArray(thisSelf.options.whatToType) : thisSelf.options.whatToType;
-
-                            thisSelf.beginTypeProcess(thisSelf.options.whatToType);
-                        } else {
-                            thisSelf.startTyping(thisSelf.options.whatToType[thisSelf.arrayPos], currentPosition);
-                        }
-                    }
-                }, typeDelay);
-            },
-
-            startCursorBlink: function() {
-                if (!this.blinkingCursor) {
-                    var theElemToBlink = $('.' + this.options.cursor.className);
-
-                    this.blinkingCursor = setInterval(function () {
-                        theElemToBlink.fadeToggle("fast");
-                    }, this.options.cursor.blinkInterval);
+                    // add characters one by one
+                    currentPosition++;
+                    // Loop it
+                    this.startTyping(currentString, currentPosition);
                 }
-            },
-
-            stopCursorBlink: function() {
-                clearInterval(this.blinkingCursor);
-                this.blinkingCursor = false;
-            },
-
-            destroy: function() {
-
-                // Remove any attached data from your plugin
-                this.$el.removeData();
+            } else {
+                this.beginTypeProcess(this.options.whatToType);
             }
-        };
+        },
+
+        stopTyping: function() {
+            var theElement = this.$el;
+            var thisSelf = this;
+
+            clearTimeout(this.typingAction);
+            clearTimeout(this.backspaceAction);
+            this.typingAction = false;
+            this.backspaceAction = false;
+
+            if (thisSelf.options.attr) {
+                theElement.attr(thisSelf.options.attr, '');
+            } else {
+                if (thisSelf.isInput) {
+                    theElement.val('');
+                } else if (thisSelf.options.contentType === 'html') {
+                    theElement.html('');
+                } else {
+                    theElement.text('');
+                }
+            }
+        },
+
+        _backspacing: function(currentString, currentPosition) {
+            var theElement = this.$el;
+            var thisSelf = this;
+
+            // Humanize typing delay
+            typeDelay = Math.round(Math.random() * (100 - 30) + thisSelf.options.typeSpeed);
+
+            this.backspaceAction = setTimeout( function() {
+                var nextString = currentString.substr(0, currentPosition);
+                if (thisSelf.options.attr) {
+                    theElement.attr(thisSelf.options.attr, nextString);
+                } else {
+                    if (thisSelf.isInput) {
+                        theElement.val(nextString);
+                    } else if (thisSelf.options.contentType === 'html') {
+                        theElement.html(nextString);
+                    } else {
+                        theElement.text(nextString);
+                    }
+                }
+
+                // if the number (id of character in current string) is
+                // less than 0, keep going
+                if (currentPosition > 0) {
+                    // subtract characters one by one
+                    currentPosition--;
+                    // loop the function
+                    thisSelf._backspacing(currentString, currentPosition);
+                }
+                // if the stop number has been reached, increase
+                // array position to next string
+                else if (currentPosition <= 0) {
+                    thisSelf.arrayPos++;
+
+                    if (thisSelf.arrayPos === thisSelf.options.whatToType.length) {
+                        thisSelf.arrayPos = 0;
+
+                        // Shuffle strings array if needed
+                        //thisSelf.options.whatToType = thisSelf.options.shuffle ? shuffleArray(thisSelf.options.whatToType) : thisSelf.options.whatToType;
+
+                        thisSelf.beginTypeProcess(thisSelf.options.whatToType);
+                    } else {
+                        thisSelf.startTyping(thisSelf.options.whatToType[thisSelf.arrayPos], currentPosition);
+                    }
+                }
+            }, typeDelay);
+        },
+
+        startCursorBlink: function() {
+            if (!this.blinkingCursor) {
+                var theElemToBlink = $('.' + this.options.cursor.className);
+
+                this.blinkingCursor = setInterval(function () {
+                    theElemToBlink.fadeToggle("fast");
+                }, this.options.cursor.blinkInterval);
+            }
+        },
+
+        stopCursorBlink: function() {
+            clearInterval(this.blinkingCursor);
+            this.blinkingCursor = false;
+        },
+
+        destroy: function() {
+
+            // Remove any attached data from your plugin
+            this.$el.removeData();
+        }
+    };
 
 
     /* * * * * * * * * * * * * *
