@@ -6,7 +6,7 @@ This was a quick spin-off of https://github.com/mattboldt/typed.js/.   The autho
 
 Some things I was looking to add were the capabilities to start/stop the typing actions, more customization for the cursor, pulling of strings from the page, etc...
 
-Keep in mind that this wasn't straight copied from his work and there were a number of things I left out because I wanted to strip it down.  Maybe in the future I'll add some of those other functionalities in, but for now it is what it is.
+Keep in mind that this wasn't straight copied from his work and there were a number of things I left out because I wanted to strip it down.  Maybe in the future I'll add some of those other functionalities in.
 
 ## Code Example
     $( "#divToPutText" ).typeForMe({
