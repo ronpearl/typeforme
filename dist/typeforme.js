@@ -147,7 +147,7 @@
 
                     thisSelf.timeout = setTimeout(function () {
                         thisSelf._backspacing(currentString, currentPosition);
-                    }, thisSelf.backDelay);
+                    }, thisSelf.options.backDelay);
                 } else {
                     // If this is the first item of the string typed,
                     // do preStringTyped function if declared by user
